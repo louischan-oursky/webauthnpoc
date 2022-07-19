@@ -96,5 +96,8 @@ document.querySelector("#get-form").addEventListener("submit", (e) => {
       alert(err);
       console.error(err);
     });
+  }).catch(err => {
+    alert(err);
+    console.error(err);
   });
 });

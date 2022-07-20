@@ -205,8 +205,8 @@ func main() {
 				challenge,
 				handle.Config.RPID,
 				handle.Config.RPOrigin,
-				"",   // We do not support FIDO AppID extension
-				true, // user verification is required
+				"",    // We do not support FIDO AppID extension
+				false, // user verification is preferred so we do not require user verification here.
 				credential.PublicKey,
 			)
 			if err != nil {

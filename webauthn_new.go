@@ -41,9 +41,11 @@ func NewWebAuthn(rpDisplayName string, r *http.Request) (*webauthn.WebAuthn, err
 			// It MUST BE true if ResidentKey is "required".
 			RequireResidentKey: &requireResidentKey,
 
-			// Require user verification.
 			// https://www.w3.org/TR/webauthn-2/#user-verification
-			UserVerification: protocol.VerificationRequired,
+			// Per the WWDC video https://developer.apple.com/videos/play/wwdc2022/10092/ at 19:12
+			// UserVerification MUST be kept as preferred for the best user experience
+			// regardless of whether biometric is available.
+			UserVerification: protocol.VerificationPreferred,
 		},
 		// Allow 5 minutes for the user to finish the registration process.
 		Timeout: int((5 * time.Minute).Milliseconds()),

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>WebAuthn</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/base64.js"></script>
+<script src="/base64url.js"></script>
+<script src="/fetch.js"></script>
+<script src="/webauthn.js"></script>
+</head>
+<body>
+	<h1>Sign in</h1>
+	<form method="get" action="/sign-in-username.html">
+	<!-- autocomplete MUST BE "username webauthn" -->
+	<!-- "webauthn" by itself DOES NOT work -->
+	<input type="text" name="name" autocomplete="username webauthn">
+	<button type="submit" name="submit">
+		Sign in
+	</button>
+	</form>
+	<a href="/">Back</a>
+	<script src="/webauthn-sign-in.js"></script>
+</body>
+</html>

@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/duo-labs/webauthn/protocol"
 	"github.com/duo-labs/webauthn/protocol/webauthncose"
-	"github.com/duo-labs/webauthn/webauthn"
 )
 
 type CreateOptions struct {
@@ -44,7 +43,7 @@ type PublicKeyCredentialDescriptor struct {
 	Transports []string                  `json:"transports,omitempty"`
 }
 
-func MakeCreateOptions(handle *webauthn.WebAuthn, user *User) (*CreateOptions, error) {
+func MakeCreateOptions(config *WebAuthnConfig, user *User) (*CreateOptions, error) {
 	challenge, err := protocol.CreateChallenge()
 	if err != nil {
 		return nil, err
@@ -62,8 +61,8 @@ func MakeCreateOptions(handle *webauthn.WebAuthn, user *User) (*CreateOptions, e
 		PublicKey: PublicKeyCredentialCreationOptions{
 			Challenge: challenge,
 			RelyingParty: PublicKeyCredentialRpEntity{
-				ID:   handle.Config.RPID,
-				Name: handle.Config.RPDisplayName,
+				ID:   config.RPID,
+				Name: config.RPDisplayName,
 			},
 			User: PublicKeyCredentialUserEntity{
 				ID:          []byte(user.ID),
@@ -90,9 +89,9 @@ func MakeCreateOptions(handle *webauthn.WebAuthn, user *User) (*CreateOptions, e
 				// https://www.w3.org/TR/webauthn-2/#sctn-authenticator-credential-properties-extension
 				"credProps": true,
 			},
-			AuthenticatorSelection: handle.Config.AuthenticatorSelection,
-			Timeout:                handle.Config.Timeout,
-			Attestation:            handle.Config.AttestationPreference,
+			AuthenticatorSelection: config.AuthenticatorSelection,
+			Timeout:                config.MediationModalTimeout,
+			Attestation:            config.AttestationPreference,
 			ExcludeCredentials:     exclude,
 		},
 	}, nil

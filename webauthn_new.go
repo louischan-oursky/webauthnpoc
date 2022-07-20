@@ -6,17 +6,26 @@ import (
 	"time"
 
 	"github.com/duo-labs/webauthn/protocol"
-	"github.com/duo-labs/webauthn/webauthn"
 )
 
-func NewWebAuthn(rpDisplayName string, r *http.Request) (*webauthn.WebAuthn, error) {
+type WebAuthnConfig struct {
+	RPID                        string
+	RPOrigin                    string
+	RPDisplayName               string
+	AttestationPreference       protocol.ConveyancePreference
+	AuthenticatorSelection      protocol.AuthenticatorSelection
+	MediationModalTimeout       int
+	MediationConditionalTimeout int
+}
+
+func NewWebAuthnConfig(rpDisplayName string, r *http.Request) (*WebAuthnConfig, error) {
 	origin := url.URL{
 		Scheme: GetProto(r),
 		Host:   GetHost(r),
 	}
 
 	requireResidentKey := true
-	config := &webauthn.Config{
+	return &WebAuthnConfig{
 		RPDisplayName: rpDisplayName,
 
 		// The RPID must be a domain only.
@@ -47,9 +56,11 @@ func NewWebAuthn(rpDisplayName string, r *http.Request) (*webauthn.WebAuthn, err
 			// regardless of whether biometric is available.
 			UserVerification: protocol.VerificationPreferred,
 		},
-		// Allow 5 minutes for the user to finish the registration process.
-		Timeout: int((5 * time.Minute).Milliseconds()),
-	}
 
-	return webauthn.New(config)
+		// For modal, the timeout is 5 minutes which is relatively short.
+		MediationModalTimeout: int((5 * time.Minute).Milliseconds()),
+
+		// For conditional, the timeout is 1 hour which is long.
+		MediationConditionalTimeout: int((1 * time.Hour).Milliseconds()),
+	}, nil
 }

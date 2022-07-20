@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>WebAuthn</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/base64.js"></script>
+<script src="/base64url.js"></script>
+<script src="/fetch.js"></script>
+<script src="/webauthn.js"></script>
+</head>
+<body>
+	<!-- modal mediation and conditional mediation cannot be present in the same page -->
+	<!-- When a page has a pending conditional mediation promise, the modal mediation promise will always be -->
+	<!-- rejected with a NotAllowedError immediately after invocation. -->
+	<!-- Therefore, we have sign-in.html and sign-in-username.html -->
+	<!-- sign-in.html supports conditional mediation if possible -->
+	<!-- If not, the user enters a username and be redirected to sign-in-username.html -->
+	<!-- where modal mediation is taken place -->
+	<h1>Sign in</h1>
+	<form id="get-form">
+	<button type="submit" name="submit">
+		Open Modal
+	</button>
+	</form>
+	<a href="/">Back</a>
+	<script src="/webauthn-sign-in-username.js"></script>
+</body>
+</html>

@@ -39,65 +39,34 @@ function serializePublicKeyCredentialAssertion(credential) {
   }
 }
 
-document.querySelector("#create-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  postForJSON(
-    "/create-options",
-    new URLSearchParams(new FormData(e.currentTarget))
-  ).then(createOptions => {
-    const base64URLChallenge = createOptions.publicKey.challenge;
-    const challenge = base64DecToArr(base64URLToBase64(base64URLChallenge));
-    createOptions.publicKey.challenge = challenge;
-
-    const base64URLUserID = createOptions.publicKey.user.id;
-    const userID = base64DecToArr(base64URLToBase64(base64URLUserID));
-    createOptions.publicKey.user.id = userID;
-
-    if (createOptions.publicKey.excludeCredentials != null) {
-      for (const c of createOptions.publicKey.excludeCredentials) {
-        c.id = base64DecToArr(base64URLToBase64(c.id));
-      }
+function deserializeGetOptions(getOptions) {
+  const base64URLChallenge = getOptions.publicKey.challenge;
+  const challenge = base64DecToArr(base64URLToBase64(base64URLChallenge));
+  getOptions.publicKey.challenge = challenge;
+  if (getOptions.publicKey.allowCredentials) {
+    for (const c of getOptions.publicKey.allowCredentials) {
+      c.id = base64DecToArr(base64URLToBase64(c.id));
     }
+  }
+}
 
-    return navigator.credentials.create(createOptions);
-  }).then(credential => {
-    const credentialJSON = serializePublicKeyCredentialAttestation(credential);
-    postJSONForText("/register", credentialJSON).then((text) => {
-      alert(text);
-    }, (err) => {
-      alert(err);
-      console.error(err);
-    });
-  }).catch(err => {
-    alert(err);
-    console.error(err);
+function signIn(credential) {
+  const credentialJSON = serializePublicKeyCredentialAssertion(credential);
+  postJSONForText("/sign-in", credentialJSON).then((text) => {
+    alert(text);
+    console.log(text);
+  }, (err) => {
+    handleError(err);
   });
-});
+}
 
-document.querySelector("#get-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  postForJSON(
-    "/get-options",
-    undefined
-  ).then(getOptions => {
-    const base64URLChallenge = getOptions.publicKey.challenge;
-    const challenge = base64DecToArr(base64URLToBase64(base64URLChallenge));
-    getOptions.publicKey.challenge = challenge;
+function handleError(err) {
+  // Cancel
+  if (err instanceof DOMException && err.name === "NotAllowedError") {
+    console.log(err.message);
+    return;
+  }
 
-    return navigator.credentials.get(getOptions);
-  }).then(credential => {
-    const credentialJSON = serializePublicKeyCredentialAssertion(credential);
-    postJSONForText("/sign-in", credentialJSON).then((text) => {
-      alert(text);
-      console.log(text);
-    }, (err) => {
-      alert(err);
-      console.error(err);
-    });
-  }).catch(err => {
-    alert(err);
-    console.error(err);
-  });
-});
+  alert(err);
+  console.error(err);
+}

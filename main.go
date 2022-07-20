@@ -36,7 +36,7 @@ func main() {
 
 		name := r.FormValue("name")
 
-		handle, err := NewWebAuthn(RPDisplayName, r)
+		config, err := NewWebAuthnConfig(RPDisplayName, r)
 		if err != nil {
 			return
 		}
@@ -49,7 +49,7 @@ func main() {
 				user = NewUserWithName(name)
 			}
 
-			createOptions, err = MakeCreateOptions(handle, user)
+			createOptions, err = MakeCreateOptions(config, user)
 			if err != nil {
 				return err
 			}
@@ -84,11 +84,6 @@ func main() {
 			}
 		}()
 
-		_, err = NewWebAuthn(RPDisplayName, r)
-		if err != nil {
-			return
-		}
-
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			return
@@ -121,7 +116,7 @@ func main() {
 		}
 	})
 
-	http.HandleFunc("/get-options", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/get-options-modal", func(w http.ResponseWriter, r *http.Request) {
 		var err error
 		defer func() {
 			if err != nil {
@@ -130,12 +125,65 @@ func main() {
 			}
 		}()
 
-		handle, err := NewWebAuthn(RPDisplayName, r)
+		err = r.ParseForm()
 		if err != nil {
 			return
 		}
 
-		getOptions, err := MakeGetOptions(handle)
+		name := r.FormValue("name")
+
+		config, err := NewWebAuthnConfig(RPDisplayName, r)
+		if err != nil {
+			return
+		}
+
+		var getOptions *GetOptions
+		err = WithTx(r.Context(), db, func(tx *sql.Tx) error {
+			user, err := FindUserWithName(r.Context(), tx, name)
+			if err != nil {
+				err = nil
+			}
+
+			var credentialID string
+			if user != nil {
+				credentialID = user.CredentialID
+			}
+
+			getOptions, err = MakeGetOptionsModal(config, credentialID)
+			if err != nil {
+				return err
+			}
+
+			session, err := NewSessionWithGetOptions(getOptions)
+			if err != nil {
+				return err
+			}
+
+			return SaveSession(r.Context(), tx, session)
+		})
+		if err != nil {
+			return
+		}
+
+		w.Header().Set("content-type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(getOptions)
+	})
+
+	http.HandleFunc("/get-options-conditional", func(w http.ResponseWriter, r *http.Request) {
+		var err error
+		defer func() {
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}()
+
+		config, err := NewWebAuthnConfig(RPDisplayName, r)
+		if err != nil {
+			return
+		}
+
+		getOptions, err := MakeGetOptionsConditional(config)
 		if err != nil {
 			return
 		}
@@ -166,7 +214,7 @@ func main() {
 			}
 		}()
 
-		handle, err := NewWebAuthn(RPDisplayName, r)
+		config, err := NewWebAuthnConfig(RPDisplayName, r)
 		if err != nil {
 			return
 		}
@@ -203,8 +251,8 @@ func main() {
 
 			err = parsed.Verify(
 				challenge,
-				handle.Config.RPID,
-				handle.Config.RPOrigin,
+				config.RPID,
+				config.RPOrigin,
 				"",    // We do not support FIDO AppID extension
 				false, // user verification is preferred so we do not require user verification here.
 				credential.PublicKey,
